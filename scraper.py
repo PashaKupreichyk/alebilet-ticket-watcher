@@ -25,18 +25,28 @@ PRICE_RE = re.compile(r"(\d[\d\s]*[.,]?\d*)\s*zł")
 
 
 def fetch_html(url: str, debug: bool = False) -> str:
+    """One-off fetch: launches and tears down a fresh browser. Fine for
+    occasional/CI use, too slow to call every 15s in a tight loop -- use
+    fetch_html_with_page() + a long-lived page for that instead."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(user_agent=USER_AGENT, locale="pl-PL")
         page = context.new_page()
-        page.goto(url, wait_until="networkidle", timeout=30000)
-        page.wait_for_timeout(2000)  # let any lazy-loaded offers render
-        html = page.content()
-        if debug:
-            page.screenshot(path="debug_screenshot.png", full_page=True)
-            with open("debug_page.html", "w", encoding="utf-8") as f:
-                f.write(html)
+        html = fetch_html_with_page(page, url, debug=debug)
         browser.close()
+    return html
+
+
+def fetch_html_with_page(page, url: str, debug: bool = False) -> str:
+    """Reuses an already-open Playwright page (much faster for polling
+    loops, since we skip browser/context startup on every check)."""
+    page.goto(url, wait_until="networkidle", timeout=30000)
+    page.wait_for_timeout(1500)  # let any lazy-loaded offers render
+    html = page.content()
+    if debug:
+        page.screenshot(path="debug_screenshot.png", full_page=True)
+        with open("debug_page.html", "w", encoding="utf-8") as f:
+            f.write(html)
     return html
 
 

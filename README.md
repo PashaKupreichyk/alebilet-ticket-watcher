@@ -40,6 +40,33 @@ Replies to your commands only show up after the next scheduled run
 (within 5 minutes), since there's no server listening in real time —
 GitHub Actions checks in on a timer instead.
 
+## Running locally instead (faster polling)
+
+GitHub Actions can't reliably poll faster than every several minutes, which
+is too slow for high-demand tickets. `run_local.py` runs continuously on
+your own always-on PC instead, checking every 15 seconds by default (one
+browser stays open the whole time, so each check is fast).
+
+**Windows setup:**
+1. Install [Python 3.11+](https://www.python.org/downloads/) if you don't have it (check "Add to PATH" during install)
+2. Put this whole `ticket-watcher` folder somewhere permanent
+3. Open `start_windows.bat` in a text editor, replace `PASTE_YOUR_TOKEN_HERE` with your real bot token
+4. Double-click `start_windows.bat`
+   - First run installs dependencies + a headless Chromium browser (~1-2 min)
+   - After that it starts polling immediately
+5. Leave the window open (minimized is fine) — closing it stops the watcher
+6. Message the bot `/watch <link> <price>` any time; it'll pick up new commands within one poll cycle (~15s)
+
+**To run it automatically at Windows startup** (optional): press `Win+R`,
+type `shell:startup`, hit enter, then drop a shortcut to `start_windows.bat`
+into that folder.
+
+You still get `/watch`, `/list`, `/remove` exactly as before — same
+`filters.json`/`state.json` files, just checked locally instead of via
+GitHub Actions. (You can run both `run_local.py` and the GitHub Actions
+workflow if you want a redundant slower backup, but they'd need separate
+filters/state since they don't share storage.)
+
 ## ⚠️ One thing to calibrate
 
 Alebilet.pl's bot-detection blocked even read-only access while I was
